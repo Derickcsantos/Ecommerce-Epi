@@ -1,0 +1,248 @@
+document.addEventListener('DOMContentLoaded', async () => {
+  // Verificar se há itens no carrinho
+  const cart = JSON.parse(localStorage.getItem('cart') || []);
+  if (cart.length === 0) {
+    window.location.href = '/cart.html';
+    return;
+  }
+
+  // Verificar autenticação
+  const sessionId = auth.getSessionId();
+  if (!sessionId) {
+    auth.showToast('Faça login para finalizar a compra', 'warning');
+    window.location.href = '/';
+    return;
+  }
+
+  const { createApp } = Vue;
+
+  createApp({
+    data() {
+      return {
+        cartItems: cart,
+        shippingCost: 15.00,
+        shippingInfo: {
+          firstName: '',
+          lastName: '',
+          email: '',
+          cep: '',
+          street: '',
+          number: '',
+          city: '',
+          state: '',
+          complement: ''
+        },
+        stripe: null,
+        elements: null,
+        paymentElement: null,
+        orderId: null,
+        loading: false,
+        paymentError: null,
+        paymentReady: false // Novo estado para controlar se o pagamento está pronto
+      };
+    },
+    computed: {
+      subtotal() {
+        return this.cartItems.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0);
+      },
+      total() {
+        return this.subtotal + this.shippingCost;
+      }
+    },
+    async mounted() {
+      try {
+        // 1. Inicializar Stripe
+        this.stripe = Stripe('pk_live_51QSIrULBmne67LeJ54ysLqdzOYSVQ3Nlpz5AfOjcktFprcayazf86tAcpd1HFlXkjdW6teXRp9CYWlNoAo0Sv6Db00YdhRX5cq');
+        
+        // 2. Preencher email se usuário logado
+        if (auth.currentUser()) {
+          this.shippingInfo.email = auth.currentUser().email;
+        }
+
+        // 3. Verificar se já temos informações de endereço suficientes
+        if (this.shippingInfo.cep && this.shippingInfo.street && this.shippingInfo.number) {
+          await this.initializePayment();
+        }
+      } catch (error) {
+        console.error('Initialization error:', error);
+        auth.showToast('Erro ao inicializar pagamento', 'danger');
+      }
+    },
+    methods: {
+      async initializePayment() {
+        try {
+          // 1. Obter clientSecret
+          const clientSecret = await this.getClientSecret();
+          if (!clientSecret) return;
+
+          // 2. Configurar elementos de pagamento
+          this.elements = this.stripe.elements({ 
+            clientSecret,
+            appearance: {
+              theme: 'stripe',
+              variables: {
+                colorPrimary: '#0570de',
+                colorBackground: '#ffffff',
+                colorText: '#30313d',
+                fontFamily: '"Helvetica Neue", Helvetica, sans-serif'
+              }
+            }
+          });
+
+          // 3. Criar e montar o elemento de pagamento
+          this.paymentElement = this.elements.create('payment');
+          await this.paymentElement.mount('#payment-element');
+
+          // 4. Marcar como pronto para pagamento
+          this.paymentReady = true;
+
+        } catch (error) {
+          console.error('Payment initialization error:', error);
+          this.paymentError = 'Erro ao configurar pagamento';
+          auth.showToast('Erro ao configurar pagamento', 'danger');
+        }
+      },
+      async getClientSecret() {
+        try {
+          // Validar endereço
+          if (!this.shippingInfo.cep || !this.shippingInfo.street || !this.shippingInfo.number) {
+            throw new Error('Preencha o endereço completo');
+          }
+
+          const response = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${sessionId}`
+            },
+            body: JSON.stringify({
+              items: this.cartItems.map(item => ({
+                id: item.id,
+                name: item.name,
+                quantity: item.quantity || 1,
+                price: item.price
+              })),
+              address: `${this.shippingInfo.street}, ${this.shippingInfo.number} - ${this.shippingInfo.city}/${this.shippingInfo.state}`,
+              cep: this.shippingInfo.cep,
+              email: this.shippingInfo.email
+            })
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.error || 'Erro ao criar pedido');
+          }
+
+          this.orderId = data.orderId;
+          return data.clientSecret;
+
+        } catch (error) {
+          console.error('Checkout error:', error);
+          this.paymentError = error.message;
+          auth.showToast(error.message, 'danger');
+          return null;
+        }
+      },
+      checkFormCompletion() {
+        const requiredFields = [
+          'firstName', 'lastName', 'email', 
+          'cep', 'street', 'number', 
+          'city', 'state'
+        ];
+        
+        const isComplete = requiredFields.every(field => 
+          !!this.shippingInfo[field] && this.shippingInfo[field].trim() !== ''
+        );
+
+        if (isComplete && !this.paymentReady) {
+          this.initializePayment();
+        }
+        
+        return isComplete;
+      },
+      async fetchAddress() {
+        if (!this.shippingInfo.cep || this.shippingInfo.cep.length < 8) return;
+        
+        try {
+          const response = await fetch(`https://viacep.com.br/ws/${this.shippingInfo.cep}/json/`);
+          const data = await response.json();
+          
+          if (data.erro) throw new Error('CEP não encontrado');
+          
+          this.shippingInfo.street = data.logradouro;
+          this.shippingInfo.city = data.localidade;
+          this.shippingInfo.state = data.uf;
+
+          // Verificar se todos os campos obrigatórios estão preenchidos
+          this.checkFormCompletion();
+        } catch (error) {
+          console.error('CEP error:', error);
+          auth.showToast('Erro ao buscar endereço', 'warning');
+        }
+      },
+      async submitPayment() {
+        if (!this.checkFormCompletion()) {
+          this.paymentError = 'Preencha todos os campos obrigatórios primeiro';
+          auth.showToast(this.paymentError, 'warning');
+          return;
+        }
+
+        if (!this.paymentReady) {
+          try {
+            await this.initializePayment();
+          } catch (error) {
+            this.paymentError = 'Erro ao preparar pagamento';
+            return;
+          } 
+        }
+
+        this.loading = true;
+        this.paymentError = null;
+        
+        try {
+          const { error } = await this.stripe.confirmPayment({
+            elements: this.elements,
+            confirmParams: {
+              return_url: `${window.location.origin}/order-success.html?order_id=${this.orderId}`,
+              receipt_email: this.shippingInfo.email,
+              shipping: {
+                name: `${this.shippingInfo.firstName} ${this.shippingInfo.lastName}`,
+                address: {
+                  line1: this.shippingInfo.street,
+                  line2: this.shippingInfo.complement,
+                  city: this.shippingInfo.city,
+                  state: this.shippingInfo.state,
+                  postal_code: this.shippingInfo.cep,
+                  country: 'BR'
+                }
+              }
+            },
+            redirect: 'if_required'
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          // Pagamento bem-sucedido (quando redirect: 'if_required')
+          localStorage.removeItem('cart');
+          if (window.updateCartCount) updateCartCount();
+          
+          // Redirecionar para página de sucesso
+          window.location.href = `/order-success.html?order_id=${this.orderId}`;
+
+        } catch (error) {
+          console.error('Payment error:', error);
+          this.paymentError = error.message || 'Erro ao processar pagamento';
+          auth.showToast(this.paymentError, 'danger');
+        } finally {
+          this.loading = false;
+        }
+      },
+      goToHome() {
+        window.location.href = '/';
+      }
+    }
+  }).mount('#app');
+});

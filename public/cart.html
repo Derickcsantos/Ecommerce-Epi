@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrinho - EPI Commerce</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+</head>
+<body>
+  <!-- Navbar igual ao index.html -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <!-- ... mesma navbar do index.html ... -->
+  </nav>
+
+  <main class="container my-5">
+    <div id="app">
+      <h1 class="mb-4">Seu Carrinho</h1>
+      
+      <div v-if="cartItems.length === 0">
+        <div class="alert alert-info">
+          Seu carrinho está vazio. <a href="products.html">Veja nossos produtos</a>
+        </div>
+      </div>
+      
+      <div v-else class="row">
+        <div class="col-md-8">
+          <div class="card mb-4">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Itens</h5>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Produto</th>
+                      <th>Preço</th>
+                      <th>Quantidade</th>
+                      <th>Total</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="item in cartItems" :key="item.id">
+                      <td>
+                        <img :src="item.image" width="50" class="me-2">
+                        {{ item.name }}
+                      </td>
+                      <td>R$ {{ item.price.toFixed(2) }}</td>
+                      <td>
+                        <input type="number" min="1" v-model.number="item.quantity" @change="updateCart" class="form-control" style="width: 70px;">
+                      </td>
+                      <td>R$ {{ (item.price * item.quantity).toFixed(2) }}</td>
+                      <td>
+                        <button class="btn btn-sm btn-danger" @click="removeItem(item.id)">
+                          <i class="bi bi-trash"></i> Remover
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">Resumo do Pedido</h5>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label for="cep" class="form-label">CEP para cálculo de frete</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="cep" v-model="cep" @blur="calculateShipping">
+                  <button class="btn btn-outline-secondary" type="button" @click="calculateShipping">Calcular</button>
+                </div>
+              </div>
+              
+              <div v-if="shippingCost !== null" class="mb-3">
+                <p>Frete: R$ {{ shippingCost.toFixed(2) }}</p>
+              </div>
+              
+              <hr>
+              
+              <div class="d-flex justify-content-between mb-2">
+                <span>Subtotal:</span>
+                <span>R$ {{ subtotal.toFixed(2) }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Frete:</span>
+                <span>R$ {{ shippingCost !== null ? shippingCost.toFixed(2) : '0.00' }}</span>
+              </div>
+              <div class="d-flex justify-content-between fw-bold fs-5">
+                <span>Total:</span>
+                <span>R$ {{ total.toFixed(2) }}</span>
+              </div>
+              
+              <a href="checkout.html" class="btn btn-primary w-100 mt-3">Finalizar Compra</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer igual ao index.html -->
+  <footer class="bg-dark text-white py-4">
+    <!-- ... mesmo footer do index.html ... -->
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/cart.js"></script>
+</body>
+</html>
