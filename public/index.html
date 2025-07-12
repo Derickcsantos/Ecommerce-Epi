@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EPI Commerce - Equipamentos de Proteção Individual</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="assets/css/style.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link href="assets/css/home.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
 </head>
 <body>
-  <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
     <div class="container">
-      <a class="navbar-brand" href="index.html">EPI Commerce</a>
+      <a class="navbar-brand" href="index.html">EPI<span class="text-accent">Store</span></a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -23,10 +25,19 @@
           <li class="nav-item">
             <a class="nav-link" href="products.html">Produtos</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#about">Sobre EPIs</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#why-us">Por que nós?</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#contact">Contato</a>
+          </li>
         </ul>
         <div class="d-flex">
           <a href="cart.html" class="btn btn-outline-light me-2">
-            Carrinho <span id="cart-count" class="badge bg-danger">0</span>
+            <i class="fas fa-shopping-cart"></i> <span id="cart-count" class="badge bg-accent">0</span>
           </a>
           <div id="auth-buttons">
             <a href="#" class="btn btn-light me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
@@ -37,7 +48,7 @@
               <span id="username-display"></span>
             </button>
             <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="#" id="admin-link" style="display: none;">Admin</a></li>
+              <li><a class="dropdown-item" onclick="window.location.href='/admin'" id="admin-link" style="display: none;">Admin</a></li>
               <li><a class="dropdown-item" href="#" id="logout-btn">Sair</a></li>
             </ul>
           </div>
@@ -46,6 +57,297 @@
     </div>
   </nav>
 
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <h1 class="animate-slide-up">Proteção de Verdade Começa com Equipamento de Qualidade</h1>
+          <p class="animate-slide-up delay-1">Na EPI-Store, sua segurança vem em primeiro lugar.<br>
+          <span class="d-inline-block mt-2">
+            <span class="badge bg-accent text-dark me-2">🔒 Produtos certificados</span>
+            <span class="badge bg-accent text-dark me-2">🚀 Entrega rápida</span>
+            <span class="badge bg-accent text-dark">🛠️ Atendimento especializado</span>
+          </span>
+          </p>
+          <a href="products.html" class="btn hero-btn animate-slide-up delay-2">Ver Catálogo Completo</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features">
+    <div class="container">
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="feature-card animate-slide-up">
+            <div class="feature-icon">
+              <i class="fas fa-certificate"></i>
+            </div>
+            <h3>Certificação CA</h3>
+            <p>Todos os nossos produtos possuem certificação do Ministério do Trabalho e atendem às normas regulamentadoras.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card animate-slide-up delay-1">
+            <div class="feature-icon">
+              <i class="fas fa-truck"></i>
+            </div>
+            <h3>Entrega Rápida</h3>
+            <p>Entregamos para todo o Brasil com prazos reduzidos e rastreamento online para você acompanhar.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="feature-card animate-slide-up delay-2">
+            <div class="feature-icon">
+              <i class="fas fa-headset"></i>
+            </div>
+            <h3>Suporte Técnico</h3>
+            <p>Equipe especializada para tirar dúvidas e ajudar na escolha dos EPIs ideais para sua necessidade.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- About EPI Section -->
+  <section class="about-epi" id="about">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 mb-4 mb-lg-0">
+          <img src="assets/img/equipeUsandoEpi.png" 
+               alt="Trabalhadores usando EPIs" class="img-fluid rounded shadow">
+        </div>
+        <div class="col-lg-6">
+          <h2 class="mb-4">O que são EPIs e por que são importantes?</h2>
+          <p class="mb-4">Segurança não é opcional — é essencial. Os Equipamentos de Proteção Individual (EPIs) são fundamentais para prevenir acidentes de trabalho, preservar a saúde e garantir conformidade com as normas de segurança.</p>
+          <ul class="list-unstyled">
+            <li class="mb-2"><i class="fas fa-check-circle text-accent me-2"></i> Proteja sua equipe contra riscos ocupacionais</li>
+            <li class="mb-2"><i class="fas fa-check-circle text-accent me-2"></i> Evite multas e processos trabalhistas</li>
+            <li class="mb-2"><i class="fas fa-check-circle text-accent me-2"></i> Construa um ambiente de trabalho mais seguro</li>
+            <li class="mb-2"><i class="fas fa-check-circle text-accent me-2"></i> Aumente a produtividade com colaboradores protegidos</li>
+          </ul>
+          <a href="#products" class="btn btn-accent mt-3">Conheça Nossos Produtos</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why Choose Us Section -->
+  <section class="why-choose-us" id="why-us">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="section-title">Por que escolher a EPI-Store?</h2>
+        <p class="lead">Quem se protege, escolhe a melhor</p>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-box-open"></i>
+            </div>
+            <div>
+              <h4>Estoque Pronto para Envio</h4>
+              <p>Não trabalhamos com encomendas. Todos os produtos estão disponíveis em nosso estoque para envio imediato.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-file-certificate"></i>
+            </div>
+            <div>
+              <h4>Certificação Garantida</h4>
+              <p>Todos os EPIs acompanham certificado de aprovação (CA) válido e nota fiscal para sua tranquilidade.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-users"></i>
+            </div>
+            <div>
+              <h4>Atendimento Personalizado</h4>
+              <p>Equipe técnica especializada para orientar na escolha dos equipamentos adequados para cada risco ocupacional.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-tags"></i>
+            </div>
+            <div>
+              <h4>Preços Competitivos</h4>
+              <p>Condições especiais para compras em grande quantidade e empresas com necessidades contínuas de EPIs.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-map-marked-alt"></i>
+            </div>
+            <div>
+              <h4>Entrega para Todo Brasil</h4>
+              <p>Parcerias com as melhores transportadoras para garantir que seus EPIs cheguem com segurança em qualquer lugar.</p>
+            </div>
+          </div>
+          <div class="benefit-item">
+            <div class="benefit-icon">
+              <i class="fas fa-shield-alt"></i>
+            </div>
+            <div>
+              <h4>Garantia de Qualidade</h4>
+              <p>Trabalhamos apenas com os melhores fabricantes do mercado, reconhecidos pela durabilidade e conforto.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="section-title">O que nossos clientes dizem</h2>
+        <p class="lead">Avaliações reais de quem confia na EPI-Store</p>
+      </div>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <p>A EPI-Store sempre entrega no prazo. Os produtos têm qualidade superior e o atendimento é impecável. Já fizemos várias compras e nunca tivemos problemas.</p>
+            <div class="testimonial-author">
+              <strong>Carlos Alberto</strong><br>
+              <small>Supervisor de Segurança do Trabalho, SP</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <p>Como responsável pela segurança de uma grande construtora, posso afirmar que a EPI-Store é nosso principal fornecedor. Produtos de qualidade e preço justo.</p>
+            <div class="testimonial-author">
+              <strong>Mariana Silva</strong><br>
+              <small>Engenheira de Segurança, RJ</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="testimonial-card">
+            <p>Atendimento diferenciado! Me orientaram na escolha dos EPIs corretos para minha equipe e ainda consegui um desconto por volume. Recomendo a todos.</p>
+            <div class="testimonial-author">
+              <strong>Roberto Santos</strong><br>
+              <small>Gerente Industrial, MG</small>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <div class="d-flex justify-content-center mb-3">
+          <i class="fas fa-star text-warning"></i>
+          <i class="fas fa-star text-warning"></i>
+          <i class="fas fa-star text-warning"></i>
+          <i class="fas fa-star text-warning"></i>
+          <i class="fas fa-star text-warning"></i>
+        </div>
+        <p class="text-muted">Avaliação média: 4.9/5.0 baseado em 127 avaliações</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Products Section -->
+  <section class="products" id="products">
+    <div class="container">
+      <div class="text-center mb-5">
+        <h2 class="section-title">Produtos em Destaque</h2>
+        <p class="lead">Conheça alguns dos nossos equipamentos mais procurados</p>
+      </div>
+      <div id="app">
+        <div class="row">
+          <div class="col-md-6 col-lg-3" v-for="product in featuredProducts" :key="product.id">
+            <div class="product-card">
+              <img :src="product.images[0]" class="product-img" :alt="product.name">
+              <div class="product-body">
+                <h5 class="product-title">{{ product.name }}</h5>
+                <p class="text-muted small">{{ product.description.substring(0, 60) }}...</p>
+                <p class="product-price mb-3">R$ {{ product.price.toFixed(2) }}</p>
+                <a :href="'product-detail.html?id=' + product.id" class="btn btn-product">Ver Detalhes</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="text-center mt-4">
+        <a href="products.html" class="btn btn-accent btn-lg">Ver Todos os Produtos</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-lg-8 text-center">
+          <h2 class="cta-title mb-4">Não espere o acidente acontecer</h2>
+          <p class="lead mb-5">Proteja sua equipe com quem entende de segurança. Converse com um de nossos especialistas e garanta os melhores EPIs do mercado.</p>
+          <div class="cta-buttons">
+            <a href="products.html" class="btn cta-primary">Ver Produtos</a>
+            <a href="#contact" class="btn cta-secondary">Fale com um Especialista</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer" id="contact">
+    <div class="container">
+      <div class="row">
+        <div class="col-lg-4 mb-4 mb-lg-0">
+          <h5 class="mb-3">EPI<span class="text-accent">Store</span></h5>
+          <p class="mb-4">Mais que EPIs. Uma missão: proteger vidas. Somos especialistas em segurança e apaixonados por prevenção.</p>
+          <div class="social-icons">
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-whatsapp"></i></a>
+          </div>
+        </div>
+        <div class="col-lg-2 col-md-6 mb-4 mb-md-0">
+          <h5 class="mb-3">Links</h5>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="products.html">Produtos</a></li>
+            <li><a href="#about">Sobre EPIs</a></li>
+            <li><a href="#why-us">Por que nós?</a></li>
+            <li><a href="#contact">Contato</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4 mb-md-0">
+          <h5 class="mb-3">Produtos</h5>
+          <ul class="footer-links">
+            <li><a href="#">Capacetes</a></li>
+            <li><a href="#">Óculos de Proteção</a></li>
+            <li><a href="#">Luvas</a></li>
+            <li><a href="#">Botas</a></li>
+            <li><a href="#">Máscaras</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-3 col-md-6">
+          <h5 class="mb-3">Contato</h5>
+          <ul class="footer-links">
+            <li><i class="fas fa-map-marker-alt me-2"></i> Av. Segurança, 123 - São Paulo, SP</li>
+            <li><i class="fas fa-phone me-2"></i> (11) 1234-5678</li>
+            <li><i class="fas fa-envelope me-2"></i> contato@epistore.com.br</li>
+            <li><i class="fas fa-clock me-2"></i> Seg-Sex: 8h-18h</li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p class="mb-0">&copy; 2023 EPIStore. Todos os direitos reservados.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modais (Login e Registro) -->
   <!-- Login Modal -->
   <div class="modal fade" id="loginModal" tabindex="-1">
     <div class="modal-dialog">
@@ -64,7 +366,7 @@
               <label for="login-password" class="form-label">Senha</label>
               <input type="password" class="form-control" id="login-password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Entrar</button>
+            <button type="submit" class="btn btn-primary w-100">Entrar</button>
           </form>
         </div>
       </div>
@@ -93,70 +395,12 @@
               <label for="register-password" class="form-label">Senha</label>
               <input type="password" class="form-control" id="register-password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Registrar</button>
+            <button type="submit" class="btn btn-primary w-100">Registrar</button>
           </form>
         </div>
       </div>
     </div>
   </div>
-
-  <main class="container my-5">
-    <div id="app">
-      <section class="mb-5">
-        <div class="row">
-          <div class="col-md-6">
-            <h1>Equipamentos de Proteção Individual</h1>
-            <p class="lead">Proteção de qualidade para você e sua equipe</p>
-            <a href="products.html" class="btn btn-primary btn-lg">Ver Produtos</a>
-          </div>
-          <div class="col-md-6">
-            <img src="https://via.placeholder.com/600x400" alt="EPI" class="img-fluid rounded">
-          </div>
-        </div>
-      </section>
-
-      <section class="mb-5">
-        <h2 class="text-center mb-4">Destaques</h2>
-        <div class="row">
-          <div class="col-md-4 mb-4" v-for="product in featuredProducts" :key="product.id">
-            <div class="card h-100">
-              <img :src="product.images[0]" class="card-img-top" :alt="product.name">
-              <div class="card-body">
-                <h5 class="card-title">{{ product.name }}</h5>
-                <p class="card-text">{{ product.description.substring(0, 100) }}...</p>
-                <p class="fw-bold">R$ {{ product.price.toFixed(2) }}</p>
-                <a :href="'product-detail.html?id=' + product.id" class="btn btn-primary">Ver Detalhes</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <footer class="bg-dark text-white py-4">
-    <div class="container">
-      <div class="row">
-        <div class="col-md-4">
-          <h5>EPI Commerce</h5>
-          <p>Equipamentos de Proteção Individual de qualidade para você e sua equipe.</p>
-        </div>
-        <div class="col-md-4">
-          <h5>Links Rápidos</h5>
-          <ul class="list-unstyled">
-            <li><a href="index.html" class="text-white">Home</a></li>
-            <li><a href="products.html" class="text-white">Produtos</a></li>
-            <li><a href="cart.html" class="text-white">Carrinho</a></li>
-          </ul>
-        </div>
-        <div class="col-md-4">
-          <h5>Contato</h5>
-          <p>contato@epicommerce.com.br</p>
-          <p>(11) 1234-5678</p>
-        </div>
-      </div>
-    </div>
-  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="assets/js/auth.js"></script>

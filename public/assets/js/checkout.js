@@ -8,7 +8,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Verificar autenticação
   const sessionId = auth.getSessionId();
-  if (!sessionId) {
+  const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+  if (!sessionId || !isLoggedIn) {
     auth.showToast('Faça login para finalizar a compra', 'warning');
     window.location.href = '/';
     return;
@@ -104,10 +105,44 @@ document.addEventListener('DOMContentLoaded', async () => {
       },
       async getClientSecret() {
         try {
-          // Validar endereço
-          if (!this.shippingInfo.cep || !this.shippingInfo.street || !this.shippingInfo.number) {
-            throw new Error('Preencha o endereço completo');
+          // Validação completa do endereço
+          const requiredAddressFields = ['cep', 'street', 'number', 'city', 'state'];
+          const missingFields = requiredAddressFields.filter(field => !this.shippingInfo[field] || !this.shippingInfo[field].trim());
+          
+          if (missingFields.length > 0) {
+            throw new Error(`Preencha os campos obrigatórios: ${missingFields.join(', ')}`);
           }
+
+          // Verificação de autenticação
+          const sessionId = auth.getSessionId();
+          if (!sessionId) {
+            auth.showToast('Sessão expirada. Faça login novamente.', 'warning');
+            window.location.href = '/login';
+            throw new Error('Sessão expirada');
+          }
+
+          // Preparar dados do pedido
+          const orderData = {
+            items: this.cartItems.map(item => ({
+              id: item.id,
+              name: item.name,
+              quantity: item.quantity || 1,
+              price: item.price
+            })),
+            address: `${this.shippingInfo.street}, ${this.shippingInfo.number} - ${this.shippingInfo.city}/${this.shippingInfo.state}`,
+            cep: this.shippingInfo.cep,
+            email: this.shippingInfo.email,
+            shippingInfo: {
+              firstName: this.shippingInfo.firstName,
+              lastName: this.shippingInfo.lastName,
+              city: this.shippingInfo.city,
+              state: this.shippingInfo.state
+            }
+          };
+
+          // Adicionar timeout para a requisição
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos
 
           const response = await fetch('/api/checkout', {
             method: 'POST',
@@ -115,32 +150,50 @@ document.addEventListener('DOMContentLoaded', async () => {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${sessionId}`
             },
-            body: JSON.stringify({
-              items: this.cartItems.map(item => ({
-                id: item.id,
-                name: item.name,
-                quantity: item.quantity || 1,
-                price: item.price
-              })),
-              address: `${this.shippingInfo.street}, ${this.shippingInfo.number} - ${this.shippingInfo.city}/${this.shippingInfo.state}`,
-              cep: this.shippingInfo.cep,
-              email: this.shippingInfo.email
-            })
+            body: JSON.stringify(orderData),
+            signal: controller.signal
           });
 
-          const data = await response.json();
+          clearTimeout(timeoutId);
 
+          // Verificar resposta
           if (!response.ok) {
-            throw new Error(data.error || 'Erro ao criar pedido');
+            const errorData = await response.json();
+            console.error('Erro na resposta da API:', errorData);
+            
+            if (response.status === 401) {
+              auth.showToast('Sessão expirada. Faça login novamente.', 'warning');
+              window.location.href = '/login';
+            }
+            
+            throw new Error(errorData.error || 'Erro ao processar seu pedido');
+          }
+
+          const data = await response.json();
+          
+          if (!data.clientSecret) {
+            throw new Error('Dados de pagamento inválidos recebidos do servidor');
           }
 
           this.orderId = data.orderId;
           return data.clientSecret;
 
         } catch (error) {
-          console.error('Checkout error:', error);
-          this.paymentError = error.message;
-          auth.showToast(error.message, 'danger');
+          console.error('Erro no checkout:', {
+            error: error.message,
+            stack: error.stack,
+            shippingInfo: this.shippingInfo,
+            cartItems: this.cartItems
+          });
+
+          if (error.name === 'AbortError') {
+            this.paymentError = 'Tempo limite excedido. Verifique sua conexão e tente novamente.';
+            auth.showToast(this.paymentError, 'danger');
+          } else {
+            this.paymentError = error.message;
+            auth.showToast(error.message || 'Erro ao processar pagamento', 'danger');
+          }
+          
           return null;
         }
       },
@@ -205,18 +258,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             elements: this.elements,
             confirmParams: {
               return_url: `${window.location.origin}/order-success.html?order_id=${this.orderId}`,
-              receipt_email: this.shippingInfo.email,
-              shipping: {
-                name: `${this.shippingInfo.firstName} ${this.shippingInfo.lastName}`,
-                address: {
-                  line1: this.shippingInfo.street,
-                  line2: this.shippingInfo.complement,
-                  city: this.shippingInfo.city,
-                  state: this.shippingInfo.state,
-                  postal_code: this.shippingInfo.cep,
-                  country: 'BR'
-                }
-              }
+              receipt_email: this.shippingInfo.email
             },
             redirect: 'if_required'
           });

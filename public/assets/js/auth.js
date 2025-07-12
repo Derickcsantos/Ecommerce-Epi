@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data.success) {
           localStorage.setItem('sessionId', data.sessionId);
           localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('isLoggedIn', 'true'); 
           currentUser = data.user;
           
           // Fechar modal e atualizar UI
@@ -82,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.addEventListener('click', () => {
       localStorage.removeItem('sessionId');
       localStorage.removeItem('user');
+      localStorage.removeItem('isLoggedIn');
       currentUser = null;
       updateAuthUI();
       showToast('Logout realizado com sucesso', 'success');
@@ -98,16 +100,33 @@ function checkAuth() {
   const sessionId = localStorage.getItem('sessionId');
   const user = JSON.parse(localStorage.getItem('user') || null);
   
-  if (sessionId && user) {
-    currentUser = user;
+  // Verificação e sincronização do estado de login
+  if (sessionId) {
+    // Se tem sessionId mas não está marcado como logado
+    if (!localStorage.getItem('isLoggedIn')) {
+      localStorage.setItem('isLoggedIn', 'true');
+    }
+    
+    // Se tem user data, atualiza o currentUser
+    if (user) {
+      currentUser = user;
+      updateAuthUI();
+      
+      // Verificar se está tentando acessar área admin sem permissão
+      if (window.location.pathname.includes('/admin') && user.tipo !== 1) {
+        window.location.href = '/';
+      }
+    }
+  } else {
+    // Se não tem sessionId, garante que está marcado como deslogado
+    localStorage.removeItem('isLoggedIn');
+    currentUser = null;
     updateAuthUI();
     
-    // Verificar se está tentando acessar área admin sem permissão
-    if (window.location.pathname.includes('/admin/') && user.tipo !== 1) {
+    // Redireciona se estiver em área admin
+    if (window.location.pathname.includes('/admin/')) {
       window.location.href = '/index.html';
     }
-  } else if (window.location.pathname.includes('/admin/')) {
-    window.location.href = '/index.html';
   }
 }
 

@@ -100,6 +100,8 @@ app.post('/api/login', async (req, res) => {
   // Criar sessão simples (não seguro para produção)
   const sessionId = Math.random().toString(36).substring(2);
   sessions[sessionId] = user.id;
+
+  console.log(`Nova sessão criada: ${sessionId} para usuário ${user.id}`);
   
   res.json({ 
     success: true, 
@@ -225,96 +227,168 @@ app.get('/api/categories', async (req, res) => {
 // Rotas de Checkout
 app.post('/api/checkout', async (req, res) => {
   try {
-    const { sessionId, items, address, cep } = req.body;
+    // 1. Verificação de autenticação - agora verifica tanto header quanto body para compatibilidade
+    const authHeader = req.headers['authorization'];
+    const tokenFromHeader = authHeader && authHeader.split(' ')[1];
+    const { sessionId: tokenFromBody, items, address, cep, email, shippingInfo } = req.body;
+
     
-    if (!sessionId || !sessions[sessionId]) {
-      return res.status(401).json({ error: 'Não autenticado' });
+    // Usa o token do header se existir, caso contrário usa do body
+    const sessionToken = tokenFromHeader || tokenFromBody;
+    
+    if (!sessionToken || !sessions[sessionToken]) {
+      console.error('Falha na autenticação - Token:', sessionToken, 'Sessões ativas:', sessions);
+      return res.status(401).json({ error: 'Não autenticado. Por favor, faça login novamente.' });
     }
 
+    // 2. Validação dos itens do carrinho
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return res.status(400).json({ error: 'Carrinho vazio' });
+      return res.status(400).json({ 
+        error: 'Seu carrinho está vazio',
+        code: 'EMPTY_CART'
+      });
     }
 
-    const userId = sessions[sessionId];
+    const userId = sessions[sessionToken];
     
-    // Verificar produtos no banco de dados
+    // 3. Verificação dos produtos no banco de dados
     const { data: products, error: productsError } = await supabase
       .from('products')
-      .select('id, price, stock')
+      .select('id, name, price, stock')
       .in('id', items.map(item => item.id));
     
-    if (productsError) throw productsError;
-
-    // Validar estoque e calcular total
-    let total = 0;
-    for (const item of items) {
-      const product = products.find(p => p.id === item.id);
-      if (!product) {
-        return res.status(400).json({ error: `Produto ${item.id} não encontrado` });
-      }
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ error: `Estoque insuficiente para ${item.name}` });
-      }
-      total += product.price * item.quantity;
+    if (productsError) {
+      console.error('Erro ao buscar produtos:', productsError);
+      throw productsError;
     }
 
-    // Criar pedido
+    // 4. Validação de estoque e cálculo do total
+    let total = 0;
+    const validatedItems = [];
+    
+    for (const item of items) {
+      const product = products.find(p => p.id === item.id);
+      
+      if (!product) {
+        return res.status(404).json({ 
+          error: `Produto ${item.name || item.id} não encontrado`,
+          code: 'PRODUCT_NOT_FOUND',
+          productId: item.id
+        });
+      }
+      
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ 
+          error: `Estoque insuficiente para ${product.name}. Disponível: ${product.stock}`,
+          code: 'INSUFFICIENT_STOCK',
+          available: product.stock
+        });
+      }
+      
+      total += product.price * item.quantity;
+      validatedItems.push({
+        ...item,
+        name: product.name, // Garante que o nome do produto está atualizado
+        price: product.price // Garante que o preço está atualizado
+      });
+    }
+
+    // 5. Criar pedido no banco de dados
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([{
         user_id: userId,
-        items,
+        items: validatedItems, // Usa os itens validados
         total,
         cep,
         endereco: address,
-        status: 'pending'
+        status: 'pending',
       }])
       .select()
       .single();
 
-    if (orderError) throw orderError;
-
-    // Atualizar estoque
-    for (const item of items) {
-      const { error } = await supabase
-        .from('products')
-        .update({ stock: supabase.rpc('decrement_stock', { 
-          product_id: item.id, 
-          amount: item.quantity 
-        })})
-        .eq('id', item.id);
-      
-      if (error) console.error('Erro ao atualizar estoque:', error);
+    if (orderError) {
+      console.error('Erro ao criar pedido:', orderError);
+      throw orderError;
     }
 
-    // Criar Payment Intent
+    // 6. Atualizar estoque (com tratamento de erro individual)
+    const stockUpdates = await Promise.all(validatedItems.map(async (item) => {
+      try {
+        const { error } = await supabase.rpc('decrement_stock', {
+          product_id: item.id,
+          amount: item.quantity
+        });
+        
+        if (error) {
+          console.error(`Erro ao atualizar estoque do produto ${item.id}:`, error);
+          return { success: false, productId: item.id, error };
+        }
+        return { success: true, productId: item.id };
+      } catch (updateError) {
+        console.error(`Erro ao atualizar estoque do produto ${item.id}:`, updateError);
+        return { success: false, productId: item.id, error: updateError };
+      }
+    }));
+
+    const failedUpdates = stockUpdates.filter(update => !update.success);
+    if (failedUpdates.length > 0) {
+      console.error('Falhas ao atualizar estoque:', failedUpdates);
+      // Não interrompemos o processo, apenas registramos
+    }
+
+    // 7. Criar Payment Intent no Stripe
+    const shippingName = req.body.shippingInfo?.firstName 
+      ? `${req.body.shippingInfo.firstName} ${req.body.shippingInfo.lastName}`
+      : 'Cliente';
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(total * 100),
+      amount: Math.round(total * 100), // Convertendo para centavos
       currency: 'brl',
-      metadata: { order_id: order.id },
+      metadata: { 
+        order_id: order.id,
+        user_id: userId
+      },
       description: `Pedido #${order.id}`,
+      receipt_email: email,
       shipping: {
-        name: req.body.shippingInfo?.firstName + ' ' + req.body.shippingInfo?.lastName,
+        name: shippingName,
         address: {
           line1: address,
           postal_code: cep,
-          city: req.body.shippingInfo?.city,
-          state: req.body.shippingInfo?.state,
+          city: shippingInfo?.city,
+          state: shippingInfo?.state,
           country: 'BR'
         }
-      }
+      },
+      automatic_payment_methods: {
+        enabled: true,
+      },
     });
 
+    console.log('Total calculado:', total);
+    // 8. Retornar resposta de sucesso
     res.json({ 
       success: true, 
       clientSecret: paymentIntent.client_secret,
-      orderId: order.id 
+      orderId: order.id,
+      amount: total,
+      currency: 'BRL',
+      paymentIntentId: paymentIntent.id
     });
 
   } catch (error) {
-    console.error('Checkout error:', error);
+    console.error('Erro no checkout:', {
+      error: error.message,
+      stack: error.stack,
+      body: req.body,
+      headers: req.headers
+    });
+    
     res.status(500).json({ 
-      error: error.message || 'Erro no processamento do pedido' 
+      error: 'Erro no processamento do pedido. Por favor, tente novamente.',
+      code: 'SERVER_ERROR',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });
@@ -349,7 +423,8 @@ app.get('/api/admin/products', async (req, res) => {
 });
 
 app.post('/api/admin/products', async (req, res) => {
-  const { sessionId, product } = req.body;
+  const { sessionId, name, price, stock, description, images, categories } = req.body;
+  const product = { name, price, stock, description, images, categories };
   
   if (!sessions[sessionId]) {
     return res.status(401).json({ error: 'Não autenticado' });
